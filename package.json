@@ -1,5 +1,9 @@
 {
   "dependencies": {
     "mongodb": "^6.14.2"
+  },
+
+  "scripts": {
+    "start": "node server.js"
   }
 }
