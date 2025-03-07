@@ -45,6 +45,7 @@ const AddCategoryModal = (props) => {
       return setFdata({ ...fData, error: "Please upload a category image" });
     }
 
+    
     try {
       let responseData = await createCategory(fData);
       if (responseData.success) {
