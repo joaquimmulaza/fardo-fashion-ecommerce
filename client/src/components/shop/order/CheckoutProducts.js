@@ -2,15 +2,28 @@ import React, { Fragment, useEffect, useContext, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { LayoutContext } from "../layout";
 import { subTotal, quantity, totalCost } from "../partials/Mixins";
-
 import { cartListProduct } from "../partials/FetchApi";
 // Remover importações relacionadas ao Braintree
 // import { getBrainTreeToken, getPaymentProcess } from "./FetchApi";
 // import { fetchData, fetchbrainTree, pay } from "./Action";
-
 // import DropIn from "braintree-web-drop-in-react";
 
 const apiURL = process.env.REACT_APP_API_URL;
+
+const fetchData = async (cartListProduct, dispatch) => {
+  dispatch({ type: "loading", payload: true });
+  try {
+    let responseData = await cartListProduct();
+    if (responseData && responseData.Products) {
+      setTimeout(function () {
+        dispatch({ type: "cartProduct", payload: responseData.Products });
+        dispatch({ type: "loading", payload: false });
+      }, 1000);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 export const CheckoutComponent = (props) => {
   const history = useHistory();
@@ -93,15 +106,17 @@ export const CheckoutComponent = (props) => {
               {/* Remover DropIn */}
               <div
                 onClick={(e) =>
-                  pay(
-                    data,
-                    dispatch,
-                    state,
-                    setState,
-                    getPaymentProcess,
-                    totalCost,
-                    history
-                  )
+                  // Remover chamada ao pay
+                  // pay(
+                  //   data,
+                  //   dispatch,
+                  //   state,
+                  //   setState,
+                  //   getPaymentProcess,
+                  //   totalCost,
+                  //   history
+                  // )
+                  console.log("Pagamento processado")
                 }
                 className="w-full px-4 py-2 text-center text-white font-semibold cursor-pointer"
                 style={{ background: "#303031" }}
