@@ -1,14 +1,11 @@
 import { createOrder } from "./FetchApi";
 
 export const fetchData = async (cartListProduct, dispatch) => {
-  dispatch({ type: "loading", payload: true });
   try {
     let responseData = await cartListProduct();
     if (responseData && responseData.Products) {
-      setTimeout(function () {
-        dispatch({ type: "cartProduct", payload: responseData.Products });
-        dispatch({ type: "loading", payload: false });
-      }, 1000);
+      dispatch({ type: "cartProduct", payload: responseData.Products });
+      dispatch({ type: "cartTotalCost", payload: responseData.cartTotalCost });
     }
   } catch (error) {
     console.log(error);

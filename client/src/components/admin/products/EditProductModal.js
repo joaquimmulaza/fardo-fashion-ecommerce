@@ -7,12 +7,7 @@ const apiURL = process.env.REACT_APP_API_URL;
 const EditProductModal = (props) => {
   const { data, dispatch } = useContext(ProductContext);
 
-  const [categories, setCategories] = useState(null);
-
-  const alert = (msg, type) => (
-    <div className={`bg-${type}-200 py-2 px-4 w-full`}>{msg}</div>
-  );
-
+  const [categories, setCategories] = useState([]);
   const [editformData, setEditformdata] = useState({
     pId: "",
     pName: "",
@@ -33,87 +28,92 @@ const EditProductModal = (props) => {
   }, []);
 
   const fetchCategoryData = async () => {
-    let responseData = await getAllCategory();
-    if (responseData.Categories) {
-      setCategories(responseData.Categories);
+    try {
+      let responseData = await getAllCategory();
+      if (responseData && responseData.Categories) {
+        setCategories(responseData.Categories);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
     }
   };
 
   useEffect(() => {
-    setEditformdata({
-      pId: data.editProductModal.pId,
-      pName: data.editProductModal.pName,
-      pDescription: data.editProductModal.pDescription,
-      pImages: data.editProductModal.pImages,
-      pStatus: data.editProductModal.pStatus,
-      pCategory: data.editProductModal.pCategory,
-      pQuantity: data.editProductModal.pQuantity,
-      pPrice: data.editProductModal.pPrice,
-      pOffer: data.editProductModal.pOffer,
-    });
+    if (data.editProductModal) {
+      setEditformdata({
+        pId: data.editProductModal.pId || "",
+        pName: data.editProductModal.pName || "",
+        pDescription: data.editProductModal.pDescription || "",
+        pImages: data.editProductModal.pImages || null,
+        pStatus: data.editProductModal.pStatus || "",
+        pCategory: data.editProductModal.pCategory || "",
+        pQuantity: data.editProductModal.pQuantity || "",
+        pPrice: data.editProductModal.pPrice || "",
+        pOffer: data.editProductModal.pOffer || "",
+      });
+    }
   }, [data.editProductModal]);
 
   const fetchData = async () => {
-    let responseData = await getAllProduct();
-    if (responseData && responseData.Products) {
-      dispatch({
-        type: "fetchProductsAndChangeState",
-        payload: responseData.Products,
-      });
+    try {
+      let responseData = await getAllProduct();
+      if (responseData && responseData.Products) {
+        dispatch({
+          type: "fetchProductsAndChangeState",
+          payload: responseData.Products,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
     }
   };
 
   const submitForm = async (e) => {
     e.preventDefault();
-    if (!editformData.pEditImages) {
-      console.log("Image Not upload=============", editformData);
-    } else {
-      console.log("Image uploading");
-    }
     try {
       let responseData = await editProduct(editformData);
       if (responseData.success) {
         fetchData();
         setEditformdata({ ...editformData, success: responseData.success });
         setTimeout(() => {
-          return setEditformdata({
+          setEditformdata({
             ...editformData,
-            success: responseData.success,
+            success: false,
           });
         }, 2000);
       } else if (responseData.error) {
         setEditformdata({ ...editformData, error: responseData.error });
         setTimeout(() => {
-          return setEditformdata({
+          setEditformdata({
             ...editformData,
-            error: responseData.error,
+            error: false,
           });
         }, 2000);
       }
     } catch (error) {
-      console.log(error);
+      console.error("Error submitting form:", error);
+      setEditformdata({ ...editformData, error: "Error updating product" });
     }
   };
+
+  const alert = (msg, type) => (
+    <div className={`bg-${type}-200 py-2 px-4 w-full`}>{msg}</div>
+  );
+
+  if (!data.editProductModal || !data.editProductModal.modal) {
+    return null;
+  }
 
   return (
     <Fragment>
       {/* Black Overlay */}
       <div
-        onClick={(e) =>
-          dispatch({ type: "editProductModalClose", payload: false })
-        }
-        className={`${
-          data.editProductModal.modal ? "" : "hidden"
-        } fixed top-0 left-0 z-30 w-full h-full bg-black opacity-50`}
+        onClick={() => dispatch({ type: "editProductModalClose", payload: false })}
+        className="fixed top-0 left-0 z-30 w-full h-full bg-black opacity-50"
       />
-      {/* End Black Overlay */}
 
       {/* Modal Start */}
-      <div
-        className={`${
-          data.editProductModal.modal ? "" : "hidden"
-        } fixed inset-0 flex items-center z-30 justify-center overflow-auto`}
-      >
+      <div className="fixed inset-0 flex items-center z-30 justify-center overflow-auto">
         <div className="mt-32 md:mt-0 relative bg-white w-11/12 md:w-3/6 shadow-lg flex flex-col items-center space-y-4 px-4 py-4 md:px-8">
           <div className="flex items-center justify-between w-full pt-4">
             <span className="text-left font-semibold text-2xl tracking-wider">
@@ -122,9 +122,7 @@ const EditProductModal = (props) => {
             {/* Close Modal */}
             <span
               style={{ background: "#303031" }}
-              onClick={(e) =>
-                dispatch({ type: "editProductModalClose", payload: false })
-              }
+              onClick={() => dispatch({ type: "editProductModalClose", payload: false })}
               className="cursor-pointer text-gray-100 py-2 px-2 rounded-full"
             >
               <svg
@@ -145,7 +143,7 @@ const EditProductModal = (props) => {
           </div>
           {editformData.error ? alert(editformData.error, "red") : ""}
           {editformData.success ? alert(editformData.success, "green") : ""}
-          <form className="w-full" onSubmit={(e) => submitForm(e)}>
+          <form className="w-full" onSubmit={submitForm}>
             <div className="flex space-x-1 py-4">
               <div className="w-1/2 flex flex-col space-y-1 space-x-1">
                 <label htmlFor="name">Nome do Produto *</label>
@@ -203,22 +201,18 @@ const EditProductModal = (props) => {
             {/* Most Important part for uploading multiple image */}
             <div className="flex flex-col mt-4">
               <label htmlFor="image">Imagens do produto *</label>
-              {editformData.pImages ? (
+              {editformData.pImages && editformData.pImages.length > 0 ? (
                 <div className="flex space-x-1">
-                  <img
-                    className="h-16 w-16 object-cover"
-                    src={`${apiURL}/uploads/products/${editformData.pImages[0]}`}
-                    alt="productImage"
-                  />
-                  <img
-                    className="h-16 w-16 object-cover"
-                    src={`${apiURL}/uploads/products/${editformData.pImages[1]}`}
-                    alt="productImage"
-                  />
+                  {editformData.pImages.map((image, index) => (
+                    <img
+                      key={index}
+                      className="h-16 w-16 object-cover"
+                      src={`${apiURL}/uploads/products/${image}`}
+                      alt={`productImage-${index}`}
+                    />
+                  ))}
                 </div>
-              ) : (
-                ""
-              )}
+              ) : null}
               <span className="text-gray-600 text-xs">Must need 2 images</span>
               <input
                 onChange={(e) =>
@@ -239,7 +233,7 @@ const EditProductModal = (props) => {
             {/* Most Important part for uploading multiple image */}
             <div className="flex space-x-1 py-4">
               <div className="w-1/2 flex flex-col space-y-1">
-                <label htmlFor="status">Product Status *</label>
+                <label htmlFor="status">Status do Produto *</label>
                 <select
                   value={editformData.pStatus}
                   onChange={(e) =>
@@ -250,21 +244,17 @@ const EditProductModal = (props) => {
                       pStatus: e.target.value,
                     })
                   }
-                  name="status"
                   className="px-4 py-2 border focus:outline-none"
                   id="status"
                 >
-                  <option name="status" value="Active">
-                    Ativar
-                  </option>
-                  <option name="status" value="Disabled">
-                  Desativar
-                  </option>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
                 </select>
               </div>
               <div className="w-1/2 flex flex-col space-y-1">
-                <label htmlFor="status">Categoria do Produto *</label>
+                <label htmlFor="category">Categoria *</label>
                 <select
+                  value={editformData.pCategory?._id || ""}
                   onChange={(e) =>
                     setEditformdata({
                       ...editformData,
@@ -273,46 +263,21 @@ const EditProductModal = (props) => {
                       pCategory: e.target.value,
                     })
                   }
-                  name="status"
                   className="px-4 py-2 border focus:outline-none"
-                  id="status"
+                  id="category"
                 >
-                  <option disabled value="">
-                    Selecionar categoria
-                  </option>
-                  {categories && categories.length > 0
-                    ? categories.map((elem) => {
-                        return (
-                          <Fragment key={elem._id}>
-                            {editformData.pCategory._id &&
-                            editformData.pCategory._id === elem._id ? (
-                              <option
-                                name="status"
-                                value={elem._id}
-                                key={elem._id}
-                                selected
-                              >
-                                {elem.cName}
-                              </option>
-                            ) : (
-                              <option
-                                name="status"
-                                value={elem._id}
-                                key={elem._id}
-                              >
-                                {elem.cName}
-                              </option>
-                            )}
-                          </Fragment>
-                        );
-                      })
-                    : ""}
+                  <option value="">Selecione uma categoria</option>
+                  {categories.map((category) => (
+                    <option key={category._id} value={category._id}>
+                      {category.cName}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
             <div className="flex space-x-1 py-4">
               <div className="w-1/2 flex flex-col space-y-1">
-                <label htmlFor="quantity">Produto em Stock *</label>
+                <label htmlFor="quantity">Quantidade *</label>
                 <input
                   value={editformData.pQuantity}
                   onChange={(e) =>
@@ -329,7 +294,7 @@ const EditProductModal = (props) => {
                 />
               </div>
               <div className="w-1/2 flex flex-col space-y-1">
-                <label htmlFor="offer">Oferta de produto (%) *</label>
+                <label htmlFor="offer">Oferta (%)</label>
                 <input
                   value={editformData.pOffer}
                   onChange={(e) =>
@@ -346,13 +311,13 @@ const EditProductModal = (props) => {
                 />
               </div>
             </div>
-            <div className="flex flex-col space-y-1 w-full pb-4 md:pb-6 mt-4">
+            <div className="flex flex-col space-y-1 w-full pb-4 md:pb-6">
               <button
-                style={{ background: "#303031" }}
                 type="submit"
+                style={{ background: "#303031" }}
                 className="rounded-full bg-gray-800 text-gray-100 text-lg font-medium py-2"
               >
-                Atualizar produto
+                Atualizar Produto
               </button>
             </div>
           </form>

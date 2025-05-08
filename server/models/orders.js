@@ -6,7 +6,7 @@ const orderSchema = new mongoose.Schema(
     allProduct: [
       {
         id: { type: ObjectId, ref: "products" },
-        quantitiy: Number,
+        quantity: Number,
       },
     ],
     user: {
@@ -18,28 +18,28 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    transactionId: {
+    paymentMethod: {
       type: String,
       required: true,
+      enum: ["bank_transfer", "cash_on_delivery"],
+    },
+    orderId: {
+      type: String,
+      required: true,
+      unique: true,
     },
     address: {
       type: String,
       required: true,
     },
     phone: {
-      type: Number,
+      type: String,
       required: true,
     },
     status: {
       type: String,
-      default: "Not processed",
-      enum: [
-        "Not processed",
-        "Processing",
-        "Shipped",
-        "Delivered",
-        "Cancelled",
-      ],
+      default: "Processando",
+      enum: ["Processando", "Aguardando pagamento", "Enviado", "Entregue", "Cancelado"],
     },
   },
   { timestamps: true }
